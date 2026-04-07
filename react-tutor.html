@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>React Study Tutor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f9f9f7; color: #111; padding: 1.5rem; max-width: 820px; margin: 0 auto; }
+  #app { padding: 1rem 0; }
+  .hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+  .hdr-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .07em; }
+  .pbar { flex: 1; height: 3px; background: #e5e5e5; border-radius: 2px; overflow: hidden; }
+  .pfill { height: 100%; background: #111; border-radius: 2px; transition: width .3s; }
+  .plabel { font-size: 12px; color: #888; }
+  .mod-tabs { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 1rem; }
+  .mod-tab { padding: 9px 10px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; background: #fff; }
+  .mod-tab.active { background: #111; }
+  .mn { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: .07em; }
+  .mod-tab.active .mn { color: #888; }
+  .mt { font-size: 13px; font-weight: 600; color: #111; margin-top: 1px; }
+  .mod-tab.active .mt { color: #fff; }
+  .pills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 1rem; }
+  .pill { padding: 4px 11px; border: 1px solid #e0e0e0; border-radius: 99px; font-size: 12px; cursor: pointer; color: #666; background: #fff; }
+  .pill:hover { border-color: #aaa; color: #111; }
+  .pill.active { background: #111; color: #fff; border-color: #111; }
+  .pill.done { color: #16a34a; border-color: #86efac; }
+  .pill.done.active { background: #dcfce7; color: #16a34a; }
+  .card { border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; background: #fff; }
+  .toolbar { display: flex; align-items: center; gap: 6px; padding: 9px 12px; border-bottom: 1px solid #e0e0e0; background: #f4f4f2; }
+  .ttitle { flex: 1; font-size: 13px; font-weight: 600; color: #111; }
+  .btn { padding: 5px 11px; border: 1px solid #ccc; border-radius: 8px; font-size: 12px; cursor: pointer; background: #fff; color: #111; font-family: inherit; }
+  .btn:hover { background: #f4f4f2; }
+  .btn.sel { background: #111; color: #fff; border-color: #111; }
+  .body { padding: 1.25rem; min-height: 300px; max-height: 480px; overflow-y: auto; }
+  .prose { font-size: 14px; line-height: 1.8; color: #111; }
+  .prose h3 { font-size: 14px; font-weight: 600; margin: 1rem 0 .35rem; }
+  .prose p { margin: .4rem 0; }
+  .prose ul { padding-left: 1.2rem; margin: .4rem 0; }
+  .prose li { margin: .2rem 0; }
+  .prose pre { font-family: 'Menlo', 'Consolas', monospace; font-size: 12px; background: #f4f4f2; padding: 12px 14px; border-radius: 8px; border: 1px solid #e0e0e0; overflow-x: auto; margin: .7rem 0; line-height: 1.6; white-space: pre; }
+  .prose code { font-family: 'Menlo', 'Consolas', monospace; font-size: 12px; background: #f4f4f2; padding: 1px 5px; border-radius: 4px; border: 1px solid #e0e0e0; }
+  .qwrap { }
+  .qtext { font-size: 14px; font-weight: 600; line-height: 1.6; margin-bottom: 1rem; color: #111; }
+  .qopts { display: flex; flex-direction: column; gap: 7px; margin-bottom: .75rem; }
+  .qopt { padding: 9px 13px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; cursor: pointer; color: #111; background: #fff; text-align: left; font-family: inherit; }
+  .qopt:hover:not([disabled]) { border-color: #aaa; }
+  .qopt.correct { border-color: #86efac; color: #16a34a; background: #dcfce7; }
+  .qopt.wrong { border-color: #fca5a5; color: #dc2626; background: #fef2f2; }
+  .qfb { font-size: 13px; line-height: 1.6; padding: 9px 12px; border-radius: 8px; margin-bottom: .75rem; }
+  .qfb.ok { background: #dcfce7; color: #16a34a; border: 1px solid #86efac; }
+  .qfb.bad { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+  .footer { display: flex; align-items: center; margin-top: .75rem; }
+  .done-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; cursor: pointer; }
+  .nav { display: flex; gap: 6px; margin-left: auto; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <span class="hdr-title">React Study</span>
+    <div class="pbar"><div class="pfill" id="pf" style="width:0%"></div></div>
+    <span class="plabel" id="pl">0 / 15</span>
+  </div>
+  <div class="mod-tabs" id="modtabs"></div>
+  <div class="pills" id="pills"></div>
+  <div class="card">
+    <div class="toolbar">
+      <span class="ttitle" id="ttitle"></span>
+      <button class="btn sel" id="bex" onclick="go('explain')">Explain</button>
+      <button class="btn" id="bqz" onclick="go('quiz')">Quiz me</button>
+    </div>
+    <div class="body" id="body"></div>
+  </div>
+  <div class="footer">
+    <label class="done-label"><input type="checkbox" id="dchk" onchange="toggleDone()"> Mark as done</label>
+    <div class="nav">
+      <button class="btn" onclick="nav(-1)">&#8592; Prev</button>
+      <button class="btn" onclick="nav(1)">Next &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function md(raw){
+  const parts = raw.split(/(```[\s\S]*?```)/g);
+  return parts.map(p => {
+    if(p.startsWith('```')){
+      const code = p.replace(/^```[^\n]*\n?/,'').replace(/```$/,'');
+      return '<pre>' + esc(code) + '</pre>';
+    }
+    return p
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/`([^`]+)`/g, (_,c) => '<code>'+c+'</code>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+      .replace(/^## (.+)$/gm,'<h3>$1</h3>')
+      .replace(/^[*-] (.+)$/gm,'<li>$1</li>')
+      .replace(/(<li>.*?<\/li>(\n|$))+/gs, m => '<ul>'+m+'</ul>')
+      .replace(/\n\n+/g,'</p><p>');
+  }).join('');
+}
+
+const DATA = [
+{t:"What is React & why use it",
+e:`### What is React?
+React is a JavaScript **library** (not a framework) built by Meta for building user interfaces. It lets you build component-based UIs that update efficiently when data changes.
+
+### Why React?
+- **Declarative** — describe *what* the UI should look like, React figures out *how* to update the DOM
+- **Component-based** — build reusable pieces, compose them into complex UIs
+- **Virtual DOM** — efficient diffing, only changed parts re-render
+- **Huge ecosystem** — Next.js, React Native, massive community
+
+### Library vs Framework
+React only handles the **view layer**. You pick your own router, state manager, etc.
+\`\`\`js
+// You write declarative code:
+function App() {
+  return <h1>Hello, world!</h1>;
+}
+// React handles the actual DOM updates for you.
+\`\`\``,
+q:{q:"Which statement about React is correct?",opts:["A. React is a full MVC framework","B. React is a library that handles only the view layer","C. React directly manipulates the real DOM on every update","D. React requires Redux for state management"],a:"B",exp:"React is a UI library, not a framework. It handles rendering only — you choose your own tools for routing, state, etc."}},
+
+{t:"SPA vs MPA",
+e:`### Multi-Page App (MPA)
+Traditional model — every navigation sends a full HTTP request. The server returns a new HTML page. Browser re-renders everything.
+
+### Single-Page App (SPA)
+The browser loads **one HTML file once**. Navigation is handled by JavaScript — React swaps components without a full page reload.
+
+- **Faster transitions** after initial load
+- **Larger initial bundle** (all JS downloaded upfront)
+- **SEO challenges** (content rendered by JS, not raw HTML)
+
+### React = SPA
+\`\`\`html
+<!-- index.html has just one div: -->
+<div id="root"></div>
+\`\`\`
+\`\`\`js
+// React mounts your entire app here:
+ReactDOM.createRoot(document.getElementById('root'))
+  .render(<App />);
+\`\`\``,
+q:{q:"What happens when a user navigates between pages in a React SPA?",opts:["A. Browser makes a full HTTP request for a new HTML page","B. JavaScript swaps components without a full page reload","C. React fetches a new HTML file from the server","D. The entire JS bundle is re-downloaded"],a:"B",exp:"In a SPA, React intercepts navigation, updates the URL, and renders the correct component — no full page reload."}},
+
+{t:"Virtual DOM & reconciliation",
+e:`### The Problem
+Real DOM operations are slow. Updating the DOM triggers layout recalculations — expensive at scale.
+
+### Virtual DOM
+React keeps a lightweight JavaScript **copy** of the DOM in memory. When state changes, React builds a new virtual DOM tree.
+
+### Reconciliation
+React **diffs** old vs new virtual DOM, finds the minimal changes, then applies only those to the real DOM.
+\`\`\`js
+function Counter({ count }) {
+  return (
+    <div>
+      <p>Count: {count}</p>
+    </div>
+  );
+}
+// When count changes 0 -> 1:
+// React diffs: only the text node changed.
+// Real DOM update: just that one text node.
+\`\`\`
+The \`key\` prop helps React identify list items during diffing.`,
+q:{q:"What does React's reconciliation algorithm do?",opts:["A. Re-renders the entire real DOM on every state change","B. Diffs old and new virtual DOM trees and applies minimal real DOM updates","C. Sends DOM changes to the server for processing","D. Prevents re-renders until the user interacts"],a:"B",exp:"Reconciliation diffs virtual DOM trees, finds what changed, and updates only those specific nodes in the real DOM."}},
+
+{t:"Component-based architecture",
+e:`### Everything is a Component
+React apps are built from components — independent, reusable pieces of UI. A component is a function that returns JSX.
+
+### Composition
+Build complex UIs by composing simple components — like LEGO bricks.
+\`\`\`js
+function Avatar({ name }) {
+  return <div className="avatar">{name[0]}</div>;
+}
+
+function UserCard({ user }) {
+  return (
+    <div className="card">
+      <Avatar name={user.name} />
+      <p>{user.name}</p>
+    </div>
+  );
+}
+
+function App() {
+  return <UserCard user={{ name: "Utkarsh" }} />;
+}
+\`\`\`
+### Benefits
+- **Reusability** — write once, use anywhere
+- **Separation of concerns** — each component owns its logic + UI
+- **Testability** — test components in isolation`,
+q:{q:"What is the main benefit of component-based architecture?",opts:["A. Components share global state automatically","B. UI is built from reusable, independent pieces that compose together","C. Components eliminate the need for CSS","D. Each component makes its own API calls"],a:"B",exp:"Components are reusable, independent units. You compose them to build complex UIs — similar to how functions compose in programming."}},
+
+{t:"JSX syntax & rules",
+e:`### What is JSX?
+JSX is a syntax extension for JavaScript that looks like HTML. Babel compiles it to React.createElement() calls.
+\`\`\`js
+// JSX:
+const el = <h1 className="title">Hello</h1>;
+
+// Compiles to:
+const el = React.createElement('h1', { className: 'title' }, 'Hello');
+\`\`\`
+### Key JSX Rules
+- **One root element** — wrap siblings in a div or fragment (<>)
+- **className not class** — class is a JS reserved word
+- **Self-close empty tags** — img />, br />
+- **camelCase attributes** — onClick, onChange, htmlFor
+- **JS expressions in {}** — {user.name}, {2 + 2}, {isLoggedIn ? 'Hi' : 'Login'}
+\`\`\`js
+function Greeting({ name, isLoggedIn }) {
+  return (
+    <>
+      <h1 className="header">
+        {isLoggedIn ? "Welcome, " + name : 'Please log in'}
+      </h1>
+      <img src="/avatar.png" alt="avatar" />
+    </>
+  );
+}
+\`\`\``,
+q:{q:"Which of the following is valid JSX?",opts:["A. <div class='box'>Hello</div>","B. <div className='box'>Hello</div>","C. Return two siblings with no wrapper element","D. <img src='x.png'> with no self-closing slash"],a:"B",exp:"JSX uses className (not class). Tags must be self-closed (<img />). Multiple siblings need a single root wrapper or Fragment (<>)."}},
+
+{t:"Functional components",
+e:`### What is a Functional Component?
+A function that accepts props and returns JSX. This is the modern standard — class components are legacy.
+\`\`\`js
+// Simplest component:
+function Hello() {
+  return <h1>Hello, world!</h1>;
+}
+
+// With props:
+function Greeting({ name }) {
+  return <h1>Hello, {name}!</h1>;
+}
+
+// Arrow function style:
+const Button = ({ label, onClick }) => (
+  <button onClick={onClick}>{label}</button>
+);
+\`\`\`
+### Rules
+- Name **must start with a capital letter** — MyButton not myButton
+- Must return JSX (or null to render nothing)
+- Can use hooks (useState, useEffect, etc.)
+\`\`\`js
+// Returning null hides the component:
+function Alert({ show, message }) {
+  if (!show) return null;
+  return <div className="alert">{message}</div>;
+}
+\`\`\``,
+q:{q:"Why must React component names start with a capital letter?",opts:["A. It's just a style convention with no functional impact","B. React uses the capital to distinguish components from native HTML tags","C. Lowercase names cause browser runtime errors","D. Capital letters enable prop passing"],a:"B",exp:"React uses the first letter's case to decide: lowercase = native HTML tag (div, span), uppercase = React component. <button> renders HTML; <Button> renders your component."}},
+
+{t:"Component composition",
+e:`### Composition over Inheritance
+React prefers composing components over class inheritance.
+
+### The children Prop
+\`\`\`js
+function Card({ children, title }) {
+  return (
+    <div className="card">
+      <h2>{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+// Anything inside <Card> becomes children:
+function App() {
+  return (
+    <Card title="Profile">
+      <p>Name: Utkarsh</p>
+      <button>Edit</button>
+    </Card>
+  );
+}
+\`\`\`
+### Slot Pattern
+\`\`\`js
+function Layout({ header, sidebar, main }) {
+  return (
+    <div>
+      <header>{header}</header>
+      <aside>{sidebar}</aside>
+      <main>{main}</main>
+    </div>
+  );
+}
+// Pass JSX as named props — very flexible.
+\`\`\``,
+q:{q:"What does the special 'children' prop contain?",opts:["A. The component's internal state","B. JSX elements placed between a component's opening and closing tags","C. Props passed with the name 'children' explicitly","D. The parent component's props"],a:"B",exp:"When you write <Card><p>Hello</p></Card>, React automatically passes <p>Hello</p> as props.children to the Card component."}},
+
+{t:"Reusability & separation of concerns",
+e:`### Reusability
+Design components to work in multiple contexts via props — not hardcoded values.
+\`\`\`js
+// BAD — hardcoded, not reusable:
+function BlueSubmitButton() {
+  return <button style={{color:'blue'}}>Submit</button>;
+}
+
+// GOOD — reusable via props:
+function Button({ label, variant = 'primary', onClick }) {
+  return (
+    <button className={"btn btn-" + variant} onClick={onClick}>
+      {label}
+    </button>
+  );
+}
+\`\`\`
+### Separation of Concerns
+- **Presentational components** — render UI based on props, no state/side effects
+- **Container components** — fetch data, manage state, pass to presentational
+\`\`\`js
+// Presentational — pure and reusable:
+function UserList({ users }) {
+  return <ul>{users.map(u => <li key={u.id}>{u.name}</li>)}</ul>;
+}
+
+// Container — handles data logic:
+function UserListContainer() {
+  const [users, setUsers] = useState([]);
+  useEffect(() => { fetchUsers().then(setUsers); }, []);
+  return <UserList users={users} />;
+}
+\`\`\``,
+q:{q:"What is a presentational (dumb) component?",opts:["A. A component with its own useState and useEffect","B. A component that only renders UI based on props — no state or side effects","C. A component that fetches its own data","D. A component built with class syntax"],a:"B",exp:"Presentational components just render what they receive via props. They're pure, easy to test, and reusable. Container components handle logic and pass data down."}},
+
+{t:"Passing data between components",
+e:`### Props flow downward
+Data flows parent to child via props. A child cannot access a parent's state unless the parent passes it as a prop.
+\`\`\`js
+function Parent() {
+  const user = { name: "Utkarsh", age: 20 };
+  return <Child name={user.name} age={user.age} />;
+}
+
+function Child({ name, age }) {
+  return <p>{name} is {age} years old</p>;
+}
+\`\`\`
+### Passing Functions as Props
+To let a child communicate up to a parent, pass a callback function as a prop.
+\`\`\`js
+function Parent() {
+  const [count, setCount] = useState(0);
+  return (
+    <Child
+      count={count}
+      onIncrement={() => setCount(c => c + 1)}
+    />
+  );
+}
+
+function Child({ count, onIncrement }) {
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={onIncrement}>+1</button>
+    </div>
+  );
+}
+\`\`\``,
+q:{q:"How does a child component send data back to its parent?",opts:["A. By directly modifying the parent's state variable","B. By calling a callback function passed as a prop from the parent","C. By using a global variable","D. Props automatically flow both up and down"],a:"B",exp:"Data flows down via props. To send data up, the parent passes a callback as a prop and the child calls it."}},
+
+{t:"Props immutability",
+e:`### Props are Read-Only
+A component must **never modify its own props**. Only the parent can change them.
+\`\`\`js
+// BAD — never mutate props:
+function Bad({ user }) {
+  user.name = "Hacked"; // DON'T DO THIS
+  return <p>{user.name}</p>;
+}
+
+// GOOD — use local state for an editable copy:
+function Good({ initialName }) {
+  const [name, setName] = useState(initialName);
+  return (
+    <input
+      value={name}
+      onChange={e => setName(e.target.value)}
+    />
+  );
+}
+\`\`\`
+### Why Immutability?
+- **Predictable data flow** — parent always controls the data
+- **Easier debugging** — you know exactly where data changes
+- **React optimizations** — React can skip re-renders if props haven't changed
+
+Think of props like function arguments — you don't mutate arguments inside a function.`,
+q:{q:"A component receives a 'count' prop. It needs a local editable version. What should it do?",opts:["A. Directly modify props.count inside the component","B. Create local state initialized from the prop: useState(count)","C. Props can be freely mutated — React will sync them","D. Ask the parent to make count a global variable"],a:"B",exp:"Props are read-only. For a local editable copy, initialize local state from the prop: const [local, setLocal] = useState(count)."}},
+
+{t:"Default props & prop patterns",
+e:`### Default Props
+Use JS default parameter syntax for fallback prop values.
+\`\`\`js
+function Button({ label = 'Click me', variant = 'primary', size = 'md' }) {
+  return (
+    <button className={"btn " + variant + " " + size}>
+      {label}
+    </button>
+  );
+}
+// <Button />                  -> "Click me", primary, md
+// <Button label="Submit" />   -> "Submit", primary, md
+// <Button variant="danger" /> -> "Click me", danger, md
+\`\`\`
+### Common Prop Patterns
+\`\`\`js
+// Spread / pass-through pattern:
+function Input({ className = '', ...rest }) {
+  return <input className={"input " + className} {...rest} />;
+}
+
+// Boolean props — presence means true:
+// <Button disabled />  is same as  <Button disabled={true} />
+
+// Render prop pattern (advanced):
+function DataFetcher({ render }) {
+  const data = useFetchedData();
+  return render(data);
+}
+\`\`\``,
+q:{q:"What renders for: function Greet({ name = 'World' }) { return <h1>Hello {name}</h1> } used as <Greet />?",opts:["A. Hello undefined","B. Hello","C. Hello World","D. Error — name prop is required"],a:"C",exp:"Default parameters mean if 'name' isn't provided, it falls back to 'World'. So <Greet /> renders 'Hello World'."}},
+
+{t:"useState hook",
+e:`### What is useState?
+useState adds **reactive state** to a functional component. When state changes, React re-renders the component.
+\`\`\`js
+import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>+</button>
+      <button onClick={() => setCount(count - 1)}>-</button>
+      <button onClick={() => setCount(0)}>Reset</button>
+    </div>
+  );
+}
+\`\`\`
+### Syntax breakdown
+\`\`\`js
+const [stateValue, setterFn] = useState(initialValue);
+\`\`\`
+- **stateValue** — current value (treat as read-only)
+- **setterFn** — call this to update state and trigger re-render
+- **initialValue** — only used on the first render
+
+### Rules of Hooks
+- Only call hooks **at the top level** — not inside loops, conditions, nested functions
+- Only call hooks inside **React function components** or custom hooks`,
+q:{q:"What happens when you call the setter function from useState?",opts:["A. The state variable mutates in place immediately","B. React schedules a re-render with the new state value","C. The entire app re-renders from scratch","D. Nothing — you need to call forceUpdate() separately"],a:"B",exp:"Calling the setter schedules a re-render. React batches updates and re-renders the component with the new state value on the next cycle."}},
+
+{t:"Updating state correctly",
+e:`### Never Mutate State Directly
+\`\`\`js
+const [items, setItems] = useState([1, 2, 3]);
+
+// BAD — React won't re-render (same reference):
+items.push(4);
+setItems(items);
+
+// GOOD — always create a new array:
+setItems([...items, 4]);                     // add
+setItems(items.filter(i => i !== 2));        // remove
+setItems(items.map(i => i === 2 ? 99 : i)); // update
+\`\`\`
+### Functional Updates
+When new state depends on previous state, use the **functional form**.
+\`\`\`js
+// BAD — can read stale state:
+setCount(count + 1);
+
+// GOOD — always get latest state:
+setCount(prev => prev + 1);
+
+// Rapid updates work correctly:
+setCount(prev => prev + 1);
+setCount(prev => prev + 1); // correctly adds 2 total
+\`\`\`
+### Updating Objects
+\`\`\`js
+const [user, setUser] = useState({ name: 'Utkarsh', age: 20 });
+
+// Spread first, then override the field:
+setUser(prev => ({ ...prev, age: 21 }));
+\`\`\``,
+q:{q:"You have: const [score, setScore] = useState(0). Which is the safest way to increment?",opts:["A. score = score + 1","B. setScore(score + 1)","C. setScore(prev => prev + 1)","D. useState(score + 1)"],a:"C",exp:"The functional form (prev => prev + 1) always uses the latest state, avoiding stale closure bugs with rapid or batched updates."}},
+
+{t:"Derived state vs stored state",
+e:`### Store Minimal State
+Only use useState for values that can't be computed from other state or props.
+
+### Derived State — Just Compute It
+\`\`\`js
+// BAD — storing derived state creates sync bugs:
+const [items, setItems] = useState(['a', 'b', 'c']);
+const [count, setCount] = useState(3); // must update BOTH every time!
+
+// GOOD — derive during render:
+const [items, setItems] = useState(['a', 'b', 'c']);
+const count = items.length; // always correct, zero effort
+\`\`\`
+\`\`\`js
+// Another example:
+const [firstName, setFirstName] = useState('Utkarsh');
+const [lastName, setLastName] = useState('Sharma');
+
+// BAD:
+const [fullName, setFullName] = useState('Utkarsh Sharma');
+
+// GOOD:
+const fullName = firstName + ' ' + lastName;
+\`\`\`
+If you can compute it from existing state/props — compute it.`,
+q:{q:"You have firstName and lastName in state. Should fullName also be stored in state?",opts:["A. Yes — it needs to update when names change","B. No — derive it: const fullName = firstName + ' ' + lastName","C. Yes — derived values are always slower to compute","D. Only if fullName is used in more than one component"],a:"B",exp:"fullName can always be computed from firstName and lastName. Storing it creates sync bugs. Compute it during render instead."}},
+
+{t:"Unidirectional data flow",
+e:`### One-Way Data Flow
+Data flows **one direction**: parent to child via props. Children call callbacks to communicate upward.
+\`\`\`
+App (holds state)
+  └── Dashboard (receives data as prop)
+        └── Chart (receives data as prop)
+              └── Tooltip (receives value as prop)
+\`\`\`
+### Why Unidirectional?
+- **Predictable** — you always know where data lives
+- **Debuggable** — if UI is wrong, check the state at the top
+- **No hidden mutations** — nothing changes from below
+
+### Example
+\`\`\`js
+function Parent() {
+  const [msg, setMsg] = useState('hello');
+  return <Child message={msg} onChange={setMsg} />;
+}
+
+function Child({ message, onChange }) {
+  return (
+    <div>
+      <p>{message}</p>
+      <button onClick={() => onChange('world')}>Change</button>
+    </div>
+  );
+}
+\`\`\``,
+q:{q:"In React's unidirectional data flow, how does data move?",opts:["A. In a circle — parent to child and back automatically","B. Downward via props; upward via callback functions passed as props","C. Bidirectionally — React syncs state between parent and child","D. All components access a shared global object"],a:"B",exp:"Data flows down through props. Children communicate upward by calling callback functions the parent passed down."}},
+
+{t:"Lifting state up",
+e:`### The Problem
+Two sibling components need to share the same state. Neither can access the other's state directly.
+
+### Solution: Lift to Closest Common Ancestor
+\`\`\`js
+// BEFORE — disconnected, out of sync:
+function TempC() {
+  const [temp, setTemp] = useState(0);
+  return <input value={temp} onChange={e => setTemp(+e.target.value)} />;
+}
+function TempF() {
+  const [temp, setTemp] = useState(32); // not in sync!
+  return <p>{temp} F</p>;
+}
+\`\`\`
+\`\`\`js
+// AFTER — lifted to parent, always in sync:
+function TempConverter() {
+  const [celsius, setCelsius] = useState(0);
+  const fahrenheit = celsius * 9/5 + 32; // derived!
+
+  return (
+    <div>
+      <input
+        value={celsius}
+        onChange={e => setCelsius(Number(e.target.value))}
+      />
+      <p>{fahrenheit} F</p>
+    </div>
+  );
+}
+\`\`\`
+Lift to the **lowest common ancestor** of all components that need the data.`,
+q:{q:"Two sibling components need the same data. What is the React pattern?",opts:["A. Store the data in localStorage for each component to read","B. Lift state to their closest common parent, pass it down as props","C. Use a ref to share data between siblings","D. Duplicate state in both and sync manually"],a:"B",exp:"Lifting state up to the closest common ancestor is the canonical React pattern. The parent owns the state and passes it to both siblings via props."}},
+
+{t:"Sharing state between components",
+e:`### Three Approaches
+
+**1. Lift State Up** — for nearby components (covered already)
+
+**2. Context API** — for deeply nested components. Avoids prop drilling.
+\`\`\`js
+const ThemeContext = React.createContext('light');
+
+function App() {
+  const [theme, setTheme] = useState('light');
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      <DeepChild />
+    </ThemeContext.Provider>
+  );
+}
+
+function DeepChild() {
+  const { theme } = useContext(ThemeContext);
+  return <div className={theme}>Hello</div>;
+}
+\`\`\`
+**3. External State Managers** — Zustand, Redux, Jotai — for large apps.
+
+### When to use what
+- Few nearby components → **lift state up**
+- Many levels deep / many consumers → **Context API**
+- Complex global state, large app → **Zustand / Redux**`,
+q:{q:"What problem does the Context API solve?",opts:["A. Makes all components re-render faster","B. Eliminates prop drilling — any component in the tree can access shared state","C. Replaces useState for local component state","D. Syncs React state with a database"],a:"B",exp:"Context lets you share state without passing props through every level (prop drilling). Any component inside the Provider can access the value with useContext."}}
+];
+
+const MODS = [
+  {title:"Fundamentals", idxs:[0,1,2,3,4]},
+  {title:"Components & Props", idxs:[5,6,7,8,9,10]},
+  {title:"State & Data Flow", idxs:[11,12,13,14,15,16]}
+];
+
+let cm=0, ct=0, mode='explain';
+const done = new Set();
+
+function di(){ return MODS[cm].idxs[ct]; }
+function key(){ return cm+'-'+ct; }
+
+function render(){
+  document.getElementById('modtabs').innerHTML = MODS.map((m,i) =>
+    `<div class="mod-tab${i===cm?' active':''}" onclick="selMod(${i})"><div class="mn">Module ${i+1}</div><div class="mt">${m.title}</div></div>`
+  ).join('');
+  document.getElementById('pills').innerHTML = MODS[cm].idxs.map((idx,i) => {
+    const k=cm+'-'+i, isd=done.has(k), isa=i===ct;
+    return `<div class="pill${isa?' active':''}${isd?' done':''}" onclick="selTopic(${i})">${DATA[idx].t}</div>`;
+  }).join('');
+  document.getElementById('ttitle').textContent = DATA[di()].t;
+  document.getElementById('dchk').checked = done.has(key());
+  const pct = Math.round(done.size/DATA.length*100);
+  document.getElementById('pf').style.width = pct+'%';
+  document.getElementById('pl').textContent = done.size+' / '+DATA.length;
+  document.getElementById('bex').className = 'btn'+(mode==='explain'?' sel':'');
+  document.getElementById('bqz').className = 'btn'+(mode==='quiz'?' sel':'');
+}
+
+function showContent(){
+  const d = DATA[di()];
+  if(mode==='explain'){
+    document.getElementById('body').innerHTML = '<div class="prose">'+md(d.e)+'</div>';
+  } else {
+    renderQ(d.q, null);
+  }
+}
+
+function renderQ(q, chosen){
+  const opts = q.opts.map(o => {
+    const L = o[0];
+    let cls = 'qopt';
+    if(chosen){ if(L===q.a) cls+=' correct'; else if(L===chosen) cls+=' wrong'; }
+    return `<button class="${cls}" ${chosen?'disabled':''} onclick="answer('${L}')">${esc(o)}</button>`;
+  }).join('');
+  const fb = chosen ? `<div class="qfb ${chosen===q.a?'ok':'bad'}">${chosen===q.a?'Correct! ':'Wrong. '}${esc(q.exp)}</div>` : '';
+  const nxt = chosen ? `<button class="btn" style="margin-top:.6rem" onclick="nav(1)">Next topic &#8594;</button>` : '';
+  document.getElementById('body').innerHTML =
+    `<div class="qwrap"><div class="qtext">${esc(q.q)}</div><div class="qopts">${opts}</div>${fb}${nxt}</div>`;
+}
+
+function answer(L){ renderQ(DATA[di()].q, L); }
+function go(m){ mode=m; render(); showContent(); }
+function selMod(i){ cm=i; ct=0; render(); showContent(); }
+function selTopic(i){ ct=i; render(); showContent(); }
+function toggleDone(){
+  const k=key();
+  document.getElementById('dchk').checked ? done.add(k) : done.delete(k);
+  render();
+}
+function nav(d){
+  const tops = MODS[cm].idxs;
+  let nt = ct+d;
+  if(nt<0){ if(cm>0){ cm--; ct=MODS[cm].idxs.length-1; } else return; }
+  else if(nt>=tops.length){ if(cm<MODS.length-1){ cm++; ct=0; } else return; }
+  else ct=nt;
+  render(); showContent();
+}
+
+render(); showContent();
+</script>
+</body>
+</html>
